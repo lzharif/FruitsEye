@@ -1,0 +1,204 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        applicationId "com.luzharif.fruitseye"
+        minSdkVersion 16
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0"
+
+        ndk {
+            moduleName "ampas"
+        }
+
+    }
+
+
+
+    // begin
+    sourceSets.main {
+        jni.srcDirs = [] //disable automatic ndk-build call
+    }
+    task ndkBuild(type: Exec, description: 'Compile JNI source via NDK') {
+        Properties properties = new Properties()
+        properties.load(project.rootProject.file('local.properties').newDataInputStream())
+        def ndkDir = properties.getProperty('ndk.dir')
+
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            commandLine  "$ndkDir\\ndk-build.cmd",
+                    'NDK_PROJECT_PATH=build/intermediates/ndk',
+                    'NDK_LIBS_OUT=src/main/jniLibs',
+                    'APP_BUILD_SCRIPT=src/main/jni/Android.mk',
+                    'NDK_APPLICATION_MK=src/main/jni/Application.mk'
+        } else {
+            commandLine "$ndkDir\\ndk-build",
+                    'NDK_PROJECT_PATH=build/intermediates/ndk',
+                    'NDK_LIBS_OUT=src/main/jniLibs',
+                    'APP_BUILD_SCRIPT=src/main/jni/Android.mk',
+                    'NDK_APPLICATION_MK=src/main/jni/Application.mk'
+        }
+    }
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn ndkBuild
+    }
+    //end
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(':openCVLibrary310')
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:22.2.0'
+    compile 'com.android.support:recyclerview-v7:22.2.0'
+    compile 'com.android.support:design:22.2.0'
+
+}
+
+//model {
+//    repositories {
+//        libs(PrebuiltLibraries) {
+//            ocv_core{
+//                binaries.withType(StaticLibraryBinary) {
+//                    staticLibraryFile = file("src/main/jniLibs/${targetPlatform.getName()}/libopencv_core.a")
+//                }
+//            }
+//            ocv_imgproc{
+//                binaries.withType(StaticLibraryBinary) {
+//                    staticLibraryFile = file("src/main/jniLibs/${targetPlatform.getName()}/libopencv_imgproc.a")
+//                }
+//            }
+//            ocv_ml{
+//                binaries.withType(StaticLibraryBinary) {
+//                    staticLibraryFile = file("src/main/jniLibs/${targetPlatform.getName()}/libopencv_ml.a")
+//                }
+//            }
+//            ocv_java3{
+//                binaries.withType(SharedLibraryBinary) {
+//                    sharedLibraryFile = file("src/main/jniLibs/${targetPlatform.getName()}/libopencv_java3.so")
+//                }
+//            }
+//        }
+//    }
+//
+//    android {
+//        compileSdkVersion = 22
+//        buildToolsVersion = "22.0.1"
+//
+//        defaultConfig.with {
+//            applicationId = "com.luzharif.fruitseye"
+//            minSdkVersion.apiLevel = 16
+//            targetSdkVersion.apiLevel = 22
+//            versionCode = 1
+//            versionName = "1.0"
+//        }
+//
+//    }
+//
+//    android.buildTypes {
+//        release {
+////            minifyEnabled = false
+////            proguardFiles.add(file('proguard-android.txt'))
+//        }
+//    }
+//
+//    android.ndk {
+//        moduleName = "capturefruitactivity"
+//        cppFlags.add("-std=c++11") // Add provisions to allow C++11 functionality
+//        cppFlags.add("-frtti")
+//        cppFlags.add("-fexceptions")
+//        cppFlags.add("-ID:/OpenCV-android-sdk/sdk/native/jni/include")
+//        ldLibs.addAll(["android", "EGL", "GLESv2", "dl", "log", "z"])
+//        ldLibs.addAll(OPENCV_STATIC_LIBS)
+//        ldLibs.addAll(OPENCV_SHARED_LIBS)
+//        stl = "gnustl_shared"
+//    }
+//
+//    android.sources {
+//        main {
+//            jni {
+//                source {
+//                    srcDirs += ['src/main/jni']
+//                }
+//
+//                dependencies {
+//                    library "ocv_core" linkage "static"
+//                    library "ocv_imgproc" linkage "static"
+//                    library "ocv_ml" linkage "static"
+//                    library "ocv_java3" linkage "shared"
+//                }
+//            }
+//
+//        }
+//    }
+//
+//    android.productFlavors {
+//        create("arm") {
+//            ndk.with {
+//                abiFilters.add("armeabi")
+//                ldFlags.addAll("-Lsrc/main/jniLibs/armeabi")
+//            }
+//        }
+//        create("armv7") {
+//            ndk.with {
+//                abiFilters.add("armeabi-v7a")
+//                ldFlags.addAll("-Lsrc/main/jniLibs/armeabi-v7a")
+//            }
+//        }
+//        create("arm64") {
+//            ndk.with {
+//                abiFilters.add("armeabi64-v8a")
+//                ldFlags.addAll("-Lsrc/main/jniLibs/armeabi64-v8a")
+//            }
+//        }
+//        create("x86") {
+//            ndk.with {
+//                abiFilters.add("x86")
+//                ldFlags.addAll("-Lsrc/main/jniLibs/x86")
+//            }
+//        }
+//        create("x86_64") {
+//            ndk.with {
+//                abiFilters.add("x86_64")
+//                ldFlags.addAll("-Lsrc/main/jniLibs/x86_64")
+//            }
+//        }
+//        create("mips") {
+//            ndk.with {
+//                abiFilters.add("mips")
+//                ldFlags.addAll("-Lsrc/main/jniLibs/mips")
+//            }
+//        }
+//        // To include all cpu architectures, leaves abiFilters empty
+//        create("all")
+//    }
+//    android.splits {
+//        abi {
+//            enable = true
+//            reset()
+//            include 'x86', 'armeabi-v7a', 'mips'
+//            universalApk = true
+//        }
+//    }
+//}
+//
+//dependencies {
+//    compile fileTree(include: ['*.jar'], dir: 'libs')
+//    testCompile 'junit:junit:4.12'
+//    compile 'com.android.support:appcompat-v7:22.2.0'
+//    compile 'com.android.support:recyclerview-v7:22.2.0'
+//    compile 'com.android.support:design:22.2.0'
+//    compile project(':openCVLibrary310')
+//}

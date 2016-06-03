@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Fruit\'s Eye</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="fruits_prompt">Choose a fruit</string>
+    <string-array name="fruits_array">
+        <item>Tomat</item>
+        <item>Semangka</item>
+        <item>Burjo</item>
+    </string-array>
+</resources>
