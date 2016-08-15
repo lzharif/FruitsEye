@@ -25,7 +25,7 @@ JNIEXPORT jint JNICALL Java_com_luzharif_fruitseye_CaptureFruitActivity_kenaliKu
     cv::Point maxloc;
     maxloc = {0,0};
 
-    mlpfunc->predict(input, response);
+    mlpfunc->predict(input, response, 1);
 
     minMaxLoc(response, NULL, NULL, NULL, &maxloc);
     kualitas = maxloc.x + 1;

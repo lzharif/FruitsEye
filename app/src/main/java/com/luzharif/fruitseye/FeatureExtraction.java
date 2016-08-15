@@ -1,5 +1,9 @@
 package com.luzharif.fruitseye;
 
+import android.os.Environment;
+
+import com.googlecode.fannj.Fann;
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -11,6 +15,7 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
 
@@ -23,9 +28,13 @@ import java.util.List;
 public class FeatureExtraction {
 
     private float energy, entropy, contrast, homogenity;
+    private String folderCitra = Environment.getExternalStorageDirectory().getPath() +
+            "/Fruits Eye";
 
-    public Mat extraction(int fruit, Mat fruitMat) {
-        int area, perimeter;
+    public float[] extraction(int fruit, Mat fruitMat) {
+        int area, perimeter, largestContourIndex = 0;
+        double largestArea = 0.0;
+        float[] result = new float[11];
         float avgFruitL, avgFruitA, avgFruitB, sdFruit, circularity;
 //        float[] result = new float[11];
         Mat fruitHsv = new Mat();
@@ -47,7 +56,7 @@ public class FeatureExtraction {
         List<MatOfPoint> contourFungi = new ArrayList<MatOfPoint>();
         MatOfInt hullFruit = new MatOfInt();
 
-        Mat result = new Mat(1, 11, CvType.CV_32F);
+//        Mat result = new Mat(1, 11, CvType.CV_32F);
 
         Imgproc.resize(fruitMat, fruitMat, new Size(640, 480), 0, 0, Imgproc.INTER_CUBIC);
         Imgproc.cvtColor(fruitMat, fruitHsv, Imgproc.COLOR_BGR2HSV);
@@ -62,7 +71,7 @@ public class FeatureExtraction {
         contourTemp = fruitThresh.clone();
         Imgproc.findContours(contourTemp, contourFruit, fruitHierarchy, Imgproc.RETR_TREE,
                 Imgproc.CHAIN_APPROX_SIMPLE, new Point(0, 0));
-        contourFruitMat = Mat.zeros(fruitThresh.rows(), fruitThresh.cols(), CvType.CV_8UC3);
+        contourFruitMat = Mat.zeros(fruitThresh.rows(), fruitThresh.cols(), CvType.CV_8UC1);
         hullFruitMat = contourFruitMat.clone();
         hullAreaFruitMat = contourFruitMat.clone();
 
@@ -71,8 +80,11 @@ public class FeatureExtraction {
         }
 
         for (int i = 0; i < contourFruit.size(); i++) {
-            Imgproc.drawContours(contourFruitMat, contourFruit, i, new Scalar(255, 255, 255), 1,
-                    8, new Mat(), 0, new Point());
+            double contArea = Imgproc.contourArea(contourFruit.get(i), false);
+            if (contArea > largestArea) {
+                largestArea = contArea;
+                largestContourIndex = i;
+            }
 //            Point[] titikHullBuah = new Point[200];
 //            int j;
 //            for (j = 0; j < hullFruit.get(i, 0)[0]; j++) {
@@ -83,7 +95,11 @@ public class FeatureExtraction {
 //            Imgproc.fillPoly(contourTemp, contourFruit, new Scalar(255,255,255));
             //TODO buat fungsi untuk menghitung convex hull, solidity, dan luas convex buah
         }
-        MatOfPoint2f contour2f = new MatOfPoint2f(contourFruit.get(0).toArray());
+        MatOfPoint2f contour2f = new MatOfPoint2f(contourFruit.get(largestContourIndex).toArray());
+
+        area = (int) largestArea;
+        perimeter = (int) Imgproc.arcLength(contour2f, true);
+        circularity = (float) (4 * Math.PI * area / Math.pow(perimeter, 2));
 
         Core.bitwise_and(fruitThresh, channelFruitLab.get(0), fruitL);
         Core.bitwise_and(fruitThresh, channelFruitLab.get(1), fruitA);
@@ -108,9 +124,8 @@ public class FeatureExtraction {
         Core.meanStdDev(fruitV, avg, sd);
         sdFruit = (float) sd.get(0, 0)[0];
 
-        area = Core.countNonZero(fruitThresh);
-        perimeter = (int) Imgproc.arcLength(contour2f, true);
-        circularity = (float) (4 * Math.PI * area / Math.pow(perimeter, 2));
+
+//        area = Core.countNonZero(fruitThresh);
 //        eccentricity = MeasureEccentricity(contourFruit);
 
 
@@ -131,29 +146,30 @@ public class FeatureExtraction {
 //        result.put(0, 0, data);
 
         // No Solidity
-//        result[0] = area;
-//        result[1] = perimeter;
-//        result[2] = avgFruitL;
-//        result[3] = avgFruitA;
-//        result[4] = avgFruitB;
-//        result[5] = sdFruit;
-//        result[6] = circularity;
-////        result[7] = eccentricity; // Tidak digunakan karena lebih baik tanpanya
-//        result[7] = entropy;
-//        result[8] = energy;
-//        result[9] = contrast;
-//        result[10] = homogenity;
-        result.put(0, 0, area);
-        result.put(0, 1, perimeter);
-        result.put(0, 2, avgFruitL);
-        result.put(0, 3, avgFruitA);
-        result.put(0, 4, avgFruitB);
-        result.put(0, 5, sdFruit);
-        result.put(0, 6, circularity);
-        result.put(0, 7, entropy);
-        result.put(0, 8, energy);
-        result.put(0, 9, contrast);
-        result.put(0, 10, homogenity);
+        result[0] = area;
+        result[1] = perimeter;
+        result[2] = avgFruitL;
+        result[3] = avgFruitA;
+        result[4] = avgFruitB;
+        result[5] = sdFruit;
+        result[6] = circularity;
+//        result[7] = eccentricity; // Tidak digunakan karena lebih baik tanpanya
+        result[7] = entropy;
+        result[8] = energy;
+        result[9] = contrast;
+        result[10] = homogenity;
+
+//        result.put(0, 0, area);
+//        result.put(0, 1, perimeter);
+//        result.put(0, 2, avgFruitL);
+//        result.put(0, 3, avgFruitA);
+//        result.put(0, 4, avgFruitB);
+//        result.put(0, 5, sdFruit);
+//        result.put(0, 6, circularity);
+//        result.put(0, 7, entropy);
+//        result.put(0, 8, energy);
+//        result.put(0, 9, contrast);
+//        result.put(0, 10, homogenity);
         return result;
     }
 

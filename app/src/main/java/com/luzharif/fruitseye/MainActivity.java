@@ -1,6 +1,7 @@
 package com.luzharif.fruitseye;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
@@ -10,8 +11,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.design.widget.FloatingActionButton;
+//import android.support.design.widget.FloatingActionButton;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -19,6 +24,10 @@ import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.Toast;
+
+import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 
 import org.opencv.android.OpenCVLoader;
 
@@ -28,14 +37,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
-
+    private List<Shots> shotsList = new ArrayList<>();
+    private RecyclerView recyclerViewShots;
+    private ShotsAdapter shotsAdapter;
+    private DatabaseHandler db;
     private String folderCitra = Environment.getExternalStorageDirectory().getAbsolutePath() +
             "/Fruits Eye";
     private static final String TAG = "MainActivity";
     private String imageName;
+    private String name;
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor sharedPrefEditor;
@@ -44,13 +59,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     int jenisBuah;
 
-    static {
-//        System.loadLibrary("opencv_java3");
-//        System.loadLibrary("gnustl_shared");
-    }
+//    static {
+////        System.loadLibrary("opencv_java3");
+////        System.loadLibrary("gnustl_shared");
+//    }
 
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
+    static final int REQUEST_LOAD_FILE = 2;
 
     static {
         if (!OpenCVLoader.initDebug()) {
@@ -58,12 +74,25 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
+    private int condition = 0;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         restorePreferences();
+
+        db = new DatabaseHandler(this);
+        recyclerViewShots = (RecyclerView) findViewById(R.id.recycler_view_fruits_list);
+        shotsList = db.getAllShots();
+        shotsAdapter = new ShotsAdapter(shotsList);
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
+        recyclerViewShots.setLayoutManager(mLayoutManager);
+        recyclerViewShots.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
+        recyclerViewShots.setItemAnimator(new DefaultItemAnimator());
+        recyclerViewShots.setAdapter(shotsAdapter);
 
         if (isFirstTime) {
             //TODO cek apakah berhasil atau tidak
@@ -84,14 +113,34 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         spinnerFruit.setAdapter(adapterFruit);
         spinnerFruit.setOnItemSelectedListener(this);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fabambilcitra);
-        assert fab != null;
-        fab.setOnClickListener(new View.OnClickListener() {
+        FloatingActionsMenu fabaction = (FloatingActionsMenu) findViewById(R.id.start_action);
+        FloatingActionButton fabTake = (FloatingActionButton) findViewById(R.id.action_takepicture);
+        FloatingActionButton fabLoad = (FloatingActionButton) findViewById(R.id.action_loadfile);
+        fabTake.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                openCamera(jenisBuah);
+            public void onClick(View v) {
+                condition = 1;
+                openCamera();
             }
         });
+        fabLoad.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                condition = 1;
+                loadFile();
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        if (condition == 0) {
+            //Get list of shots
+            shotsList = db.getAllShots();
+            recyclerViewShots.setAdapter(new ShotsAdapter(shotsList));
+        }
+        else {}
+        super.onResume();
     }
 
     /**
@@ -131,7 +180,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     /**
      * Fungsi untuk buffer penulisan file
-     * @param in inputstream dari Assets
+     *
+     * @param in  inputstream dari Assets
      * @param out outputstream ke folder memori eksternal
      */
     private void copyFile(InputStream in, OutputStream out) {
@@ -147,12 +197,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     private void restorePreferences() {
+        condition = 0;
         sharedPreferences = getSharedPreferences("data_fruits_eye", 0);
         sharedPrefEditor = sharedPreferences.edit();
         isFirstTime = sharedPreferences.getBoolean("isfirsttime", true);
     }
 
-    private void openCamera(int buah) {
+    private void openCamera() {
         Intent bukaKameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (bukaKameraIntent.resolveActivity(getPackageManager()) != null) {
             File photoFile = null;
@@ -169,34 +220,48 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
+    private void loadFile() {
+        Intent bukaFileIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        bukaFileIntent.setType("file/*");
+        startActivityForResult(bukaFileIntent, REQUEST_LOAD_FILE);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-//            Bundle extras = data.getExtras();
-//
-//
-//            Mat citraKamera = new Mat();
-//            Utils.bitmapToMat(imageBitmap, citraKamera);
-//            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss", Locale.US);
-//            String waktu = sdf.format(new Date());
-//
-//            String filename = folderCitra + "/" + waktu + ".jpg";
-//            if(Imgcodecs.imwrite(filename, citraKamera))
-//                Log.d(TAG, "Bitmap saved");
-            Bundle info = new Bundle();
-            info.putString("filename", imageName);
-            info.putInt("jenis_buah", jenisBuah);
-            Intent startFruitsCamera = new Intent(this, CaptureFruitActivity.class);
-            startFruitsCamera.putExtra("bundle", info);
-            startActivity(startFruitsCamera);
+        if (resultCode == RESULT_OK) {
+            boolean valid = true;
+            if (requestCode == REQUEST_IMAGE_CAPTURE) {
+                valid = true;
+            } else if (requestCode == REQUEST_LOAD_FILE) {
+                Uri file = data.getData();
+                if (file.getLastPathSegment().endsWith("png")) {
+                    imageName = file.getPath();
+                    name = file.getLastPathSegment();
+                    valid = true;
+                } else
+                    valid = false;
+            }
+
+            if (valid) {
+                Bundle info = new Bundle();
+                info.putString("filename", imageName);
+                info.putInt("jenis_buah", jenisBuah);
+                info.putString("name", name);
+                Intent startFruitsCamera = new Intent(this, CaptureFruitActivity.class);
+                startFruitsCamera.putExtra("bundle", info);
+                condition = 0;
+                startActivity(startFruitsCamera);
+            } else
+                Toast.makeText(MainActivity.this, "Not an png file!", Toast.LENGTH_SHORT).show();
         }
     }
 
     private File createImageFile() throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("ddMMyyyy_HHmmss").format(new Date());
+        name = timeStamp;
         imageName = Environment.getExternalStorageDirectory() + File.separator
-                + "/Fruits Eye/" + timeStamp + ".jpg";
+                + "/Fruits Eye/" + timeStamp + ".png";
         File image = new File(imageName);
 //        File storageDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "legit";
 //        File image = File.createTempFile(
@@ -241,7 +306,28 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_reset) {
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+            alert.setTitle("Reset Database?");
+            alert.setMessage("If you click yes, previous data will be erased. Are you sure?")
+                    .setCancelable(false)
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            db.resetTables();
+                            shotsList = db.getAllShots();
+                            recyclerViewShots.setAdapter(new ShotsAdapter(shotsList));
+                        }
+                    })
+                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    });
+            AlertDialog alertDialog = alert.create();
+            alertDialog.show();
+
             return true;
         }
 

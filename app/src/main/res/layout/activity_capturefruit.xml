@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:fab="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -14,19 +15,109 @@
             android:id="@+id/citra_edit"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="0.7"/>
+            android:layout_weight="0.6" />
 
-        <TextView
-            android:paddingTop="8dp"
-            android:id="@+id/quality_text"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="0.3"
-            android:text="Kualitas : -"
-            android:textAppearance="?android:textAppearanceLarge" />
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.1"
+                    android:text="H : " />
+
+                <SeekBar
+                    android:id="@+id/seekBar_H"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.7"
+                    android:max="180" />
+
+                <TextView
+                    android:id="@+id/textView_seek_H"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_weight="0.2"
+                    android:paddingLeft="8dp"
+                    android:text="0"
+                    android:textAlignment="textEnd" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.1"
+                    android:text="S : " />
+
+                <SeekBar
+                    android:id="@+id/seekBar_S"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.7"
+                    android:max="255" />
+
+                <TextView
+                    android:id="@+id/textView_seek_S"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_weight="0.2"
+                    android:paddingLeft="8dp"
+                    android:text="0"
+                    android:textAlignment="textEnd" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.1"
+                    android:text="V : " />
+
+                <SeekBar
+                    android:id="@+id/seekBar_V"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.7"
+                    android:max="255" />
+
+                <TextView
+                    android:id="@+id/textView_seek_V"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_weight="0.2"
+                    android:paddingLeft="8dp"
+                    android:text="0"
+                    android:textAlignment="textEnd" />
+            </LinearLayout>
+        </LinearLayout>
+
     </LinearLayout>
 
-    <android.support.design.widget.FloatingActionButton
+    <com.getbase.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_process"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -36,6 +127,21 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:onClick="processImage"
-        android:src="@android:drawable/ic_menu_view" />
+        fab:fab_colorNormal="@color/colorAccent"
+        fab:fab_colorPressed="@color/pink_pressed"
+        fab:fab_icon="@android:drawable/ic_menu_view"
+        fab:fab_title="Take Picture" />
+
+    <!--<android.support.design.widget.FloatingActionButton-->
+    <!--android:id="@+id/fab_process"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_alignParentBottom="true"-->
+    <!--android:layout_alignParentEnd="true"-->
+    <!--android:layout_alignParentRight="true"-->
+    <!--android:layout_gravity="bottom|end"-->
+    <!--android:layout_margin="16dp"-->
+    <!--android:onClick="processImage"-->
+    <!--android:src="@android:drawable/ic_menu_view" />-->
 
 </RelativeLayout>
