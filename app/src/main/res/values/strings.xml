@@ -1,11 +1,13 @@
 <resources>
-    <string name="app_name">Fruit\'s Eye</string>
-    <string name="action_reset">Reset Data</string>
-
+    <string name="app_name">Smart Eye</string>
+    <string name="action_reset">Reset List</string>
+    <string name="action_erase">Erase Database</string>
     <string name="fruits_prompt">Choose a fruit</string>
     <string-array name="fruits_array">
         <item>Tomat</item>
         <item>Semangka</item>
         <item>Burjo</item>
     </string-array>
+
+    <string name="captureimage_name">Capture Image</string>
 </resources>

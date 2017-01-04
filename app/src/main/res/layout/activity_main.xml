@@ -7,7 +7,7 @@
     android:padding="16dp"
     android:keepScreenOn="true"
     android:orientation="vertical"
-    tools:context="com.luzharif.fruitseye.MainActivity">
+    tools:context="com.luzharif.smarteye.activity.MainActivity">
 
     <include layout="@layout/content_main" />
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.luzharif.fruitseye">
+    package="com.luzharif.smarteye">
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -10,9 +10,10 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
+        android:largeHeap="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity"
+            android:name="com.luzharif.smarteye.activity.MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme">
             <intent-filter>
@@ -22,8 +23,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".CaptureFruitActivity"
-            android:label="Capture Fruit" >
+            android:name="com.luzharif.smarteye.activity.CaptureImageActivity"
+            android:label="@string/captureimage_name" >
         </activity>
     </application>
 
