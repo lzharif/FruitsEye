@@ -30,7 +30,7 @@ public class FeatureExtraction {
         int area, perimeter, largestContourIndex = 0;
         double largestArea = 0.0;
         float[] result = new float[12];
-        float avgFruitL, avgFruitA, avgFruitB, sdFruit, circularity;
+        float avgFruitL, avgFruitA, avgFruitB, avgFruitC, sdFruit, circularity;
 //        float[] result = new float[11];
         Mat fruitHsv = new Mat();
         Mat fruitLab = new Mat();
@@ -115,6 +115,8 @@ public class FeatureExtraction {
         Core.meanStdDev(fruitB, avg, sd);
         avgFruitB = (float) avg.get(0, 0)[0];
 
+        avgFruitC = measureConstantC(avgFruitA, avgFruitB);
+
         Core.meanStdDev(fruitV, avg, sd);
         sdFruit = (float) sd.get(0, 0)[0];
 
@@ -145,13 +147,14 @@ public class FeatureExtraction {
         result[2] = avgFruitL;
         result[3] = avgFruitA;
         result[4] = avgFruitB;
-        result[5] = sdFruit;
-        result[6] = circularity;
+        result[5] = avgFruitC;
+        result[6] = sdFruit;
+        result[7] = circularity;
 //        result[7] = eccentricity; // Tidak digunakan karena lebih baik tanpanya
-        result[7] = entropy;
-        result[8] = energy;
-        result[9] = contrast;
-        result[10] = homogenity;
+        result[8] = entropy;
+        result[9] = energy;
+        result[10] = contrast;
+        result[11] = homogenity;
 
 //        result.put(0, 0, area);
 //        result.put(0, 1, perimeter);
@@ -247,5 +250,12 @@ public class FeatureExtraction {
         contrast = (float) kontras;
         homogenity = (float) homogenitas;
         entropy = (float) entropi;
+    }
+
+    private float measureConstantC(float A, float B) {
+        float A2 = (float) Math.pow(A, 2);
+        float B2 = (float) Math.pow(B, 2);
+        float C2 = A2 + B2;
+        return (float) Math.pow(C2, 0.5);
     }
 }

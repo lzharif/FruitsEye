@@ -21,6 +21,7 @@ import com.luzharif.smarteye.helper.DatabaseHandler;
 import com.luzharif.smarteye.helper.FeatureExtraction;
 import com.luzharif.smarteye.helper.FloodFillDetector;
 import com.luzharif.smarteye.R;
+import com.luzharif.smarteye.helper.KlasifikasiKemasakan;
 import com.luzharif.smarteye.model.Shots;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -36,8 +37,16 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.RandomAccessFile;
+
+import weka.classifiers.functions.MultilayerPerceptron;
+import weka.core.Instances;
+import weka.core.converters.ArffLoader;
 
 /**
  * Created by LuZharif on 24/04/2016.
@@ -59,7 +68,7 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
     private int valueChannelH;
     private int valueChannelS;
     private int valueChannelV;
-    private int quality;
+    private String kemasakan;
     private int jenisBuah;
     private boolean isSegmented;
     private float[] dataHasil;
@@ -76,8 +85,7 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
     private Bitmap orientedBitmap;
     private String folderCitra = Environment.getExternalStorageDirectory().getPath() +
             "/Fruits Eye";
-    private String modelFruit = Environment.getExternalStorageDirectory().getAbsolutePath() +
-            "/Fruits Eye/tomato_6_fann.net";
+    private String dataTemplateFruit = "MLP_Data_Template.arff";
 
     private static final String TAG = "Fruits Eye -> CaptureFruitActivity";
 
@@ -100,14 +108,14 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                {
+                case LoaderCallbackInterface.SUCCESS: {
                     Log.i("OpenCV", "OpenCV loaded successfully");
-                } break;
-                default:
-                {
+                }
+                break;
+                default: {
                     super.onManagerConnected(status);
-                } break;
+                }
+                break;
             }
         }
     };
@@ -122,7 +130,7 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
         setContentView(R.layout.activity_capturefruit);
 
         //initialization
-        quality = 0;
+        kemasakan = "";
         valueChannelH = 0;
         valueChannelS = 0;
         valueChannelV = 0;
@@ -227,8 +235,7 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
     }
 
     @Override
-    public void onResume()
-    {
+    public void onResume() {
         super.onResume();
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
@@ -240,8 +247,8 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
     }
 
     private void thresholdImage(int L, int A, int B) {
-        Mat mask = new Mat(mRgba.rows(),mRgba.cols(),CvType.CV_8UC1, new Scalar(0));
-        int sensitivity  = 15;
+        Mat mask = new Mat(mRgba.rows(), mRgba.cols(), CvType.CV_8UC1, new Scalar(0));
+        int sensitivity = 15;
         int LHigh = L + sensitivity;
         if (LHigh > 180)
             LHigh = 180;
@@ -265,19 +272,19 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
         if (nameFix != null) {
             switch (jenisBuah) {
                 case 0:
-                    buah = "tomat";
+                    buah = "Tomato";
                     break;
                 case 1:
-                    buah = "semangka";
+                    buah = "Watermelon";
                     break;
                 case 2:
-                    buah = "burjo";
+                    buah = "Orange";
                     break;
                 default:
-                    buah = "tomat";
+                    buah = "Tomato";
             }
             DatabaseHandler db = new DatabaseHandler(this);
-            db.addShot(new Shots(nameFix, buah, quality, filename));
+            db.addShot(new Shots(nameFix, buah, kemasakan, filename));
         }
         CaptureImageActivity.super.onBackPressed();
     }
@@ -318,31 +325,30 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
     }
 
     public void processImage(View view) {
-        if(isSegmented) {
+        if (isSegmented) {
             BackgroundTask task = new BackgroundTask(CaptureImageActivity.this);
             task.execute();
-        }
-        else
+        } else
             Toast.makeText(CaptureImageActivity.this,
                     "Please choose the region first by clicking the image or seek bar.",
                     Toast.LENGTH_SHORT).show();
     }
 
-    private void saveData(int quality, float[] dataHasil) {
+    private void saveData(String kemasakan, float[] dataHasil) {
         String nameText = "Fruit Data.txt";
         File fruitData = new File(folderCitra);
         File file = new File(fruitData, nameText);
         File namef = new File(filename);
         nameFix = namef.getName();
-        quality = Integer.parseInt(edittxtBrix.getText().toString());
-        if(file.exists()) {
+        kemasakan = edittxtBrix.getText().toString();
+        if (file.exists()) {
             try {
                 FileWriter writer = new FileWriter(file, true);
                 writer.append(name + "\t" + dataHasil[0] + "\t" + dataHasil[1] + "\t" +
                         dataHasil[2] + "\t" + dataHasil[3] + "\t" + dataHasil[4] + "\t" +
                         dataHasil[5] + "\t" + dataHasil[6] + "\t" + dataHasil[7] + "\t" +
                         dataHasil[8] + "\t" + dataHasil[9] + "\t" + dataHasil[10] + "\t" +
-                        quality + "\n");
+                        dataHasil[11] + "\t" + kemasakan + "\n");
                 writer.flush();
                 writer.close();
                 Toast.makeText(CaptureImageActivity.this, "Data has been saved!",
@@ -350,18 +356,17 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        else {
+        } else {
             try {
                 FileWriter writer = new FileWriter(file, true);
                 writer.append("Image\t" + "Area\t" + "Perimeter\t" + "LChannel\t" + "AChannel\t" +
-                        "BChannel\t" + "Granularity\t" + "Circularity\t" + "Entropy\t" + "Energy\t" +
-                        "Contrast\t" + "Homogenity\t" + "Quality\n");
+                        "BChannel\t" + "CChannel\t" + "Granularity\t" + "Circularity\t" + "Entropy\t" +
+                        "Energy\t" + "Contrast\t" + "Homogenity\t" + "Quality\n");
                 writer.append(name + "\t" + dataHasil[0] + "\t" + dataHasil[1] + "\t" +
                         dataHasil[2] + "\t" + dataHasil[3] + "\t" + dataHasil[4] + "\t" +
                         dataHasil[5] + "\t" + dataHasil[6] + "\t" + dataHasil[7] + "\t" +
                         dataHasil[8] + "\t" + dataHasil[9] + "\t" + dataHasil[10] + "\t" +
-                        quality + "\n");
+                        dataHasil[11] + "\t" + kemasakan + "\n");
                 writer.flush();
                 writer.close();
                 Toast.makeText(CaptureImageActivity.this,
@@ -391,7 +396,6 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
             if (dialog.isShowing()) {
                 dialog.dismiss();
             }
-            quality = 1;
 
             final Dialog resultDialog = new Dialog(CaptureImageActivity.this);
             resultDialog.setContentView(R.layout.dialog_result);
@@ -399,17 +403,20 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
             TextView txtL = (TextView) resultDialog.findViewById(R.id.L_text);
             TextView txtA = (TextView) resultDialog.findViewById(R.id.A_text);
             TextView txtB = (TextView) resultDialog.findViewById(R.id.B_text);
+            TextView txtC = (TextView) resultDialog.findViewById(R.id.C_text);
             TextView txtEntropi = (TextView) resultDialog.findViewById(R.id.entropi_text);
             TextView txtEnergi = (TextView) resultDialog.findViewById(R.id.energi_text);
             TextView txtKontras = (TextView) resultDialog.findViewById(R.id.kontras_text);
             TextView txtHomogen = (TextView) resultDialog.findViewById(R.id.homogen_text);
+            ImageView imageView = (ImageView) resultDialog.findViewById(R.id.imageFruit_Result);
+            imageView.setVisibility(View.GONE);
             Button buttonSave = (Button) resultDialog.findViewById(R.id.button_save);
             Button buttonGoBack = (Button) resultDialog.findViewById(R.id.button_go_back);
             buttonSave.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     try {
-                        saveData(quality, dataHasil);
+                        saveData(kemasakan, dataHasil);
                     } catch (Exception e) {
                         e.printStackTrace();
                         Toast.makeText(CaptureImageActivity.this, "Save Error",
@@ -425,15 +432,15 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
                 }
             });
 
-//            quality = kenaliKualitas(dataHasil.getNativeObjAddr(), jenisBuah);
-            edittxtBrix.setText("" + quality);
+            edittxtBrix.setText("" + kemasakan);
             txtL.setText("L : " + dataHasil[2]);
             txtA.setText("A : " + dataHasil[3]);
             txtB.setText("B : " + dataHasil[4]);
-            txtEntropi.setText("Entropy : " + dataHasil[7]);
-            txtEnergi.setText("Energy : " + dataHasil[8]);
-            txtKontras.setText("Contrast : " + dataHasil[9]);
-            txtHomogen.setText("Homogenity : " + dataHasil[10]);
+            txtC.setText("C : " + dataHasil[5]);
+            txtEntropi.setText("Entropy : " + dataHasil[8]);
+            txtEnergi.setText("Energy : " + dataHasil[9]);
+            txtKontras.setText("Contrast : " + dataHasil[10]);
+            txtHomogen.setText("Homogenity : " + dataHasil[11]);
 
             resultDialog.show();
             resultDialog.setTitle("Results");
@@ -445,16 +452,16 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
             try {
                 FeatureExtraction fe = new FeatureExtraction();
                 dataHasil = fe.extraction(jenisBuah, hasil);
-                quality = 1;
-                //TODO Tentukan Kualitas menggunakan Weka
-
+                KlasifikasiKemasakan klasifikasiKemasakan = new KlasifikasiKemasakan(getApplicationContext());
+                kemasakan = klasifikasiKemasakan.dapatkanKemasakan(dataHasil[5]);
+//                kemasakan = klasifikasiWeka(konstantaC);
 //                Fann fann = new Fann(modelFruit);
 //                float[] qualityArray = fann.run(dataHasil);
 //                float maxQuality = qualityArray[0];
 //                for (int i = 0; i < qualityArray.length; i++) {
 //                    if (qualityArray[i] > maxQuality) {
 //                        maxQuality = qualityArray[i];
-//                        quality = i + 1;
+//                        kemasakan = i + 1;
 //                    }
 //                }
             } catch (Exception e) {
@@ -464,5 +471,80 @@ public class CaptureImageActivity extends AppCompatActivity implements View.OnTo
             return null;
         }
 
+    }
+
+    private float kalkulasiKonstantaC() {
+        float A2 = (float) Math.pow(dataHasil[3], 2);
+        float B2 = (float) Math.pow(dataHasil[4], 2);
+        float C2 = A2 + B2;
+        return (float) Math.pow(C2, 0.5);
+    }
+
+    private String klasifikasiWeka(float C) throws IOException {
+        InputStream is = null;
+        Object ois = null;
+        Instances testInstance = null;
+        double labelIndex = 0;
+        String label = "Red";
+
+        // Read Model MLP from Asset (Worked!)
+        try {
+            is = getAssets().open("MLP_37.model");
+            ois = new ObjectInputStream(is).readObject();
+        } catch (IOException e) {
+            Toast.makeText(this, "Gagal mbuh", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        } catch (Exception e) {
+            Toast.makeText(this, "Gagal Load Data", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
+        MultilayerPerceptron mlp = (MultilayerPerceptron) ois;
+
+        // Read data template
+
+        // Start by changing dataset with new input (Worked!)
+        File file = new File(folderCitra, dataTemplateFruit);
+
+        RandomAccessFile f = null;
+        try {
+            f = new RandomAccessFile(file, "rw");
+            byte b;
+            long length = f.length() - 1;
+            do {
+                length -= 1;
+                f.seek(length);
+                b = f.readByte();
+            } while (b != 10);
+            f.setLength(length + 1);
+            f.writeChars(C + ",2");
+            f.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Now read the modified dataset
+        ArffLoader atf = new ArffLoader();
+        try {
+            atf.setFile(file);
+            // Set test instances
+            if (atf != null) {
+                testInstance = atf.getDataSet();
+            }
+
+            if (mlp != null) {
+                // Classify using Model
+                labelIndex = mlp.classifyInstance(testInstance.firstInstance());
+            }
+        } catch (IOException e) {
+            Log.e("GALAT BACA TEMPLATE", "GALAT 1");
+            e.printStackTrace();
+        } catch (Exception e) {
+            Log.e("GALAT BACA DATA", "GALAT 1");
+            e.printStackTrace();
+        }
+        // Return the string of kemasakan
+        return testInstance.classAttribute().value((int) labelIndex);
     }
 }

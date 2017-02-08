@@ -4,27 +4,28 @@ package com.luzharif.smarteye.model;
  * Created by LuZharif on 23/04/2016.
  */
 public class Shots {
+    //TODO change structure to include Raw Data
     private int _id;
     private String _nameshot;
     private String _namefruit;
-    private int _fruitquality;
+    private String _fruitkemasakan;
     private String _imageFruit;
 
     public Shots() {
     }
 
-    public Shots(int id, String nameshot, String namefruit, int fruitquality, String imageFruit) {
+    public Shots(int id, String nameshot, String namefruit, String fruitquality, String imageFruit) {
         this._id = id;
         this._nameshot = nameshot;
         this._namefruit = namefruit;
-        this._fruitquality = fruitquality;
+        this._fruitkemasakan = fruitquality;
         this._imageFruit = imageFruit;
     }
 
-    public Shots(String nameshot, String namefruit, int fruitquality, String imageFruit) {
+    public Shots(String nameshot, String namefruit, String fruitkemasakan, String imageFruit) {
         this._nameshot = nameshot;
         this._namefruit = namefruit;
-        this._fruitquality = fruitquality;
+        this._fruitkemasakan = fruitkemasakan;
         this._imageFruit = imageFruit;
     }
 
@@ -46,8 +47,8 @@ public class Shots {
         return this._namefruit;
     }
 
-    public int getFruitQuality() {
-        return this._fruitquality;
+    public String getFruitQuality() {
+        return this._fruitkemasakan;
     }
 
     public String getImageFruit() {
@@ -62,8 +63,8 @@ public class Shots {
         this._namefruit = nameFruit;
     }
 
-    public void setFruitQuality(int fruitQuality){
-        this._fruitquality = fruitQuality;
+    public void setFruitQuality(String fruitKemasakan){
+        this._fruitkemasakan = fruitKemasakan;
     }
 
     public void setImageFruit(String imageFruit){

@@ -285,7 +285,6 @@ public class WekaHelper {
         try {
             clsLabel = cModel.classifyInstance(unlabeled);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         unlabeled.setClassValue(clsLabel);

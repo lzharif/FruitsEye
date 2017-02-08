@@ -4,9 +4,9 @@
     <string name="action_erase">Erase Database</string>
     <string name="fruits_prompt">Choose a fruit</string>
     <string-array name="fruits_array">
-        <item>Tomat</item>
-        <item>Semangka</item>
-        <item>Burjo</item>
+        <item>Tomato</item>
+        <item>Watermelon</item>
+        <item>Orange</item>
     </string-array>
 
     <string name="captureimage_name">Capture Image</string>

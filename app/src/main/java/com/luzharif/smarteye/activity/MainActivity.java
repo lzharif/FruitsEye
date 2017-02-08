@@ -41,14 +41,20 @@ import com.luzharif.smarteye.adapter.ShotsAdapter;
 import org.opencv.android.OpenCVLoader;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import weka.classifiers.functions.MultilayerPerceptron;
+import weka.core.SerializationHelper;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
     private List<Shots> shotsList = new ArrayList<>();
@@ -57,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private DatabaseHandler db;
     private String folderCitra = Environment.getExternalStorageDirectory().getAbsolutePath() +
             "/Fruits Eye";
+    private String dataTemplateFruit = "MLP_Data_Template.arff";
     private static final String TAG = "MainActivity";
     private String imageName;
     private String name;
@@ -91,8 +98,28 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+//        InputStream is = null;
+//        try {
+//            is = getAssets().open("MLP_37.model");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        Object ois = null;
+//        try {
+//            ois = new ObjectInputStream(is).readObject();
+//        } catch (ClassNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        MultilayerPerceptron mlp = (MultilayerPerceptron) ois;
+//        double a = mlp.getLearningRate();
+//        Toast.makeText(this, "" + a, Toast.LENGTH_SHORT).show();
+
+
         restorePreferences();
 
+        //TODO Add SetOnClickListener for shotsAdapter
         db = new DatabaseHandler(this);
         recyclerViewShots = (RecyclerView) findViewById(R.id.recycler_view_fruits_list);
         shotsList = db.getAllShots();
@@ -127,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             if (!file.exists())
                 if (!file.mkdirs())
                     Log.e(TAG, "Gagal membuat folder");
-            copyAssets();
+            // copyAssets();
         }
         else
             Toast.makeText(MainActivity.this,
@@ -186,7 +213,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
      */
     private void copyAssets() {
         AssetManager assetManager = getAssets();
-        String[] files = {"model_fruit.xml", "tomato_6_fann.net"};
+        String[] files = {"MLP_37.model", "MLP_Data_Template.arff"};
         //            files = assetManager.list("");
         for (String filename : files) {
             InputStream in = null;
@@ -283,7 +310,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     realPath = RealPathUtil.getRealPathFromURI_API19(this, data.getData());
 //                Uri file = data.getData();
 //                if (file.getLastPathSegment().endsWith("png")) {
-                if (realPath.endsWith("png")) {
+                if (realPath.endsWith("jpg") || realPath.endsWith("png")) {
                     imageName = realPath;
                     name = realPath;
                     valid = true;
@@ -301,7 +328,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 condition = 0;
                 startActivity(startFruitsCamera);
             } else
-                Toast.makeText(MainActivity.this, "Not an png file!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Not an image file!", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -355,6 +382,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
+
+        //TODO change menu into Erase Database & Generate Text File
         if (id == R.id.action_reset) {
             AlertDialog.Builder alert = new AlertDialog.Builder(this);
             alert.setTitle("Reset Database?");

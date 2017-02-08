@@ -13,6 +13,7 @@ import android.provider.MediaStore;
  */
 public class RealPathUtil {
     @SuppressLint("NewApi")
+    //TODO Cari penyebab java.lang.IllegalArgumentException: Invalid URI di Android 6.0
     public static String getRealPathFromURI_API19(Context context, Uri uri){
         String filePath = "";
         String wholeID = DocumentsContract.getDocumentId(uri);

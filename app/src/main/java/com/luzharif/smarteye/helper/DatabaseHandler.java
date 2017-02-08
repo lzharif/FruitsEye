@@ -98,7 +98,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 shots.setID(Integer.parseInt(cursor.getString(0)));
                 shots.setNameShot(cursor.getString(1));
                 shots.setNameFruit(cursor.getString(2));
-                shots.setFruitQuality(Integer.parseInt(cursor.getString(3)));
+                shots.setFruitQuality(cursor.getString(3));
                 shots.setImageFruit(cursor.getString(4));
                 // Adding contact to list
                 contactList.add(shots);
